@@ -1,12 +1,10 @@
 package file
 
 import (
-	"bytes"
 	"crypto/sha1"
 	"encoding/base64"
 	uuid "github.com/satori/go.uuid"
 	"github.com/xxtea/xxtea-go/xxtea"
-	"io/ioutil"
 )
 
 func (f *File) genKey() error {
@@ -24,46 +22,21 @@ func (f *File) Encrypt() error {
 	if err := f.genKey(); err != nil {
 		return err
 	}
-	b, err := ioutil.ReadAll(f.Body)
-	if err != nil {
+
+	encrFile := xxtea.Encrypt(f.Bytes(), []byte(f.Key))
+	f.Reset()
+
+	if _, err := f.Write(encrFile); err != nil {
 		return err
 	}
-	if err := f.Body.Close(); err != nil {
-		return err
-	}
-
-	encrFile := xxtea.Encrypt(b, []byte(f.Key))
-
-	f.Body = nil
-
-	var file bytes.Buffer
-	_, err = file.Write(encrFile)
-	if err != nil {
-		return err
-	}
-	f.Body = ioutil.NopCloser(bytes.NewReader(file.Bytes()))
 
 	return nil
 }
 
 func (f *File) Decrypt() error {
-	b, err := ioutil.ReadAll(f.Body)
-	if err != nil {
-		return err
-	}
-	if err := f.Body.Close(); err != nil {
-		return err
-	}
+	decrFile := xxtea.Decrypt(f.Bytes(), []byte(f.Key))
+	f.Reset()
 
-	decrFile := xxtea.Decrypt(b, []byte(f.Key))
-
-	f.Body = nil
-	var file bytes.Buffer
-	_, err = file.Write(decrFile)
-	if err != nil {
-		return err
-	}
-	f.Body = ioutil.NopCloser(bytes.NewReader(file.Bytes()))
-
-	return nil
+	_, err := f.Write(decrFile)
+	return err
 }

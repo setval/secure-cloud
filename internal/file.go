@@ -5,7 +5,6 @@ import (
 	"github.com/DiscoreMe/SecureCloud/pkg/file"
 	"github.com/labstack/echo"
 	uuid "github.com/satori/go.uuid"
-	"io"
 	"net/http"
 	"os"
 )
@@ -27,9 +26,11 @@ func (s *Server) UploadFile(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
-	fl := file.File{
-		Body: f,
+	var fl file.File
+	if _, err := fl.WriteFromReader(f); err != nil {
+		return err
 	}
 	if err := fl.Encrypt(); err != nil {
 		return err
@@ -41,7 +42,7 @@ func (s *Server) UploadFile(c echo.Context) error {
 	}
 	defer fcr.Close()
 
-	_, err = io.Copy(fcr, fl.Body)
+	_, err = fcr.Write(fl.Bytes())
 	if err != nil {
 		return err
 	}
@@ -66,15 +67,17 @@ func (s *Server) File(c echo.Context) error {
 	}
 	defer fh.Close()
 
-	f := file.File{
-		ID:   fileID,
-		Key:  key,
-		Body: fh,
+	var f = file.File{
+		ID:  fileID,
+		Key: key,
+	}
+
+	if _, err := f.WriteFromReader(fh); err != nil {
+		return err
 	}
 	if err := f.Decrypt(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "key is invalid")
 	}
-	defer f.Body.Close()
 
-	return c.Stream(http.StatusOK, "", f.Body)
+	return c.Stream(http.StatusOK, "", &f)
 }
