@@ -6,7 +6,6 @@ import (
 	"github.com/labstack/echo"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
-	"os"
 )
 
 type UploadFileResp struct {
@@ -20,6 +19,15 @@ func (s *Server) UploadFile(c echo.Context) error {
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		return err
+	}
+
+	storParam := c.Param("storage")
+	if storParam == "" {
+		storParam = "local"
+	}
+	stor, ok := s.stors[storParam]
+	if !ok {
+		return fmt.Errorf("storage not found")
 	}
 
 	f, err := fileHeader.Open()
@@ -36,14 +44,7 @@ func (s *Server) UploadFile(c echo.Context) error {
 		return err
 	}
 
-	fcr, err := os.Create(fl.ID.String())
-	if err != nil {
-		return err
-	}
-	defer fcr.Close()
-
-	_, err = fcr.Write(fl.Bytes())
-	if err != nil {
+	if err := stor.Upload(&fl); err != nil {
 		return err
 	}
 
@@ -61,23 +62,27 @@ func (s *Server) File(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	fh, err := os.Open(fileID.String())
-	if err != nil {
-		return echo.NewHTTPError(http.StatusNotFound, "")
-	}
-	defer fh.Close()
-
-	var f = file.File{
+	var f = &file.File{
 		ID:  fileID,
 		Key: key,
 	}
 
-	if _, err := f.WriteFromReader(fh); err != nil {
+	storParam := c.Param("storage")
+	if storParam == "" {
+		storParam = "local"
+	}
+	stor, ok := s.stors[storParam]
+	if !ok {
+		return fmt.Errorf("storage not found")
+	}
+
+	if err := stor.Download(f); err != nil {
 		return err
 	}
+
 	if err := f.Decrypt(); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "key is invalid")
 	}
 
-	return c.Stream(http.StatusOK, "", &f)
+	return c.Stream(http.StatusOK, "", f)
 }
