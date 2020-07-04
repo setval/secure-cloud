@@ -21,7 +21,7 @@ func (s *Server) UploadFile(c echo.Context) error {
 		return err
 	}
 
-	storParam := c.Param("storage")
+	storParam := c.QueryParam("storage")
 	if storParam == "" {
 		storParam = "local"
 	}
@@ -51,7 +51,7 @@ func (s *Server) UploadFile(c echo.Context) error {
 	return c.JSON(http.StatusCreated, UploadFileResp{
 		Key:    fl.Key,
 		FileID: fl.ID.String(),
-		URL:    fmt.Sprintf("%s/api/file/%s/%s", c.Request().Host, fl.ID.String(), fl.Key),
+		URL:    fmt.Sprintf("%s/api/file/%s/%s?storage=%s", c.Request().Host, fl.ID.String(), fl.Key, storParam),
 	})
 }
 
@@ -67,7 +67,7 @@ func (s *Server) File(c echo.Context) error {
 		Key: key,
 	}
 
-	storParam := c.Param("storage")
+	storParam := c.QueryParam("storage")
 	if storParam == "" {
 		storParam = "local"
 	}
