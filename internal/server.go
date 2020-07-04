@@ -2,6 +2,7 @@ package internal
 
 import (
 	"github.com/DiscoreMe/SecureCloud/pkg/storage"
+	"github.com/DiscoreMe/SecureCloud/pkg/storage/drive"
 	"github.com/DiscoreMe/SecureCloud/pkg/storage/local"
 	"github.com/labstack/echo"
 )
@@ -43,4 +44,18 @@ func (s *Server) Listen(address string) error {
 func (s *Server) EnableLocalStorage() error {
 	s.stors["local"] = local.New()
 	return nil
+}
+
+func (s *Server) EnableDriveStorage() error {
+	stor, err := drive.New()
+	if err != nil {
+		return err
+	}
+	s.stors["drive"] = stor
+	return nil
+}
+
+func (s *Server) UpdateDriveToken() error {
+	d := drive.Drive{}
+	return d.UpdateToken()
 }
