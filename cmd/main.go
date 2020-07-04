@@ -18,6 +18,14 @@ func main() {
 		panic(err)
 	}
 
+	if cfg.IsSupportDrive {
+		if err := serv.EnableDriveStorage(); err != nil {
+			if err := serv.UpdateDriveToken(); err != nil {
+				panic(err)
+			}
+		}
+	}
+
 	if err := serv.Listen("127.0.0.1:7777"); err != nil {
 		panic(err)
 	}

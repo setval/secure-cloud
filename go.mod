@@ -9,4 +9,6 @@ require (
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/xxtea/xxtea-go v0.0.0-20170828040851-35c4b17eecf6
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	google.golang.org/api v0.28.0
 )

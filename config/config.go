@@ -1,14 +1,27 @@
 package config
 
-import "os"
+import (
+	"flag"
+	"os"
+)
 
 // Config is a system configuration transmitted though env
 type Config struct {
-	Token string
+	Token          string
+	IsSupportDrive bool
 }
 
 func NewConfig() *Config {
+	isSupportDriveFlag := flag.Bool("drive", false, "Enable google drive")
+	flag.Parse()
+
+	var isSupportDrive bool
+	if isSupportDriveFlag != nil {
+		isSupportDrive = *isSupportDriveFlag
+	}
+
 	return &Config{
-		Token: os.Getenv("SC_TOKEN"),
+		Token:          os.Getenv("SC_TOKEN"),
+		IsSupportDrive: isSupportDrive,
 	}
 }
