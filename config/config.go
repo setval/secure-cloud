@@ -9,19 +9,24 @@ import (
 type Config struct {
 	Token          string
 	IsSupportDrive bool
+	Address        string
 }
 
 func NewConfig() *Config {
+	var cfg = &Config{
+		Token: os.Getenv("SC_TOKEN"),
+	}
+
 	isSupportDriveFlag := flag.Bool("drive", false, "Enable google drive")
+	address := flag.String("address", "[::]:80", "Server address")
 	flag.Parse()
 
-	var isSupportDrive bool
 	if isSupportDriveFlag != nil {
-		isSupportDrive = *isSupportDriveFlag
+		cfg.IsSupportDrive = *isSupportDriveFlag
+	}
+	if address != nil {
+		cfg.Address = *address
 	}
 
-	return &Config{
-		Token:          os.Getenv("SC_TOKEN"),
-		IsSupportDrive: isSupportDrive,
-	}
+	return cfg
 }

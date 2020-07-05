@@ -26,7 +26,7 @@ func main() {
 		}
 	}
 
-	if err := serv.Listen("127.0.0.1:7777"); err != nil {
+	if err := serv.Listen(cfg.Address); err != nil {
 		panic(err)
 	}
 }
