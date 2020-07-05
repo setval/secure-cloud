@@ -7,7 +7,8 @@ import (
 
 // Config is a system configuration transmitted though env
 type Config struct {
-	Token          string
+	Token string
+	YadiskToken string
 	IsSupportDrive bool
 }
 
@@ -21,7 +22,8 @@ func NewConfig() *Config {
 	}
 
 	return &Config{
-		Token:          os.Getenv("SC_TOKEN"),
+		Token: os.Getenv("SC_TOKEN"),
+		YadiskToken: os.Getenv("YADISK_TOKEN"),
 		IsSupportDrive: isSupportDrive,
 	}
 }
