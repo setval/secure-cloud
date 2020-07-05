@@ -4,6 +4,7 @@ import (
 	"github.com/DiscoreMe/SecureCloud/pkg/storage"
 	"github.com/DiscoreMe/SecureCloud/pkg/storage/drive"
 	"github.com/DiscoreMe/SecureCloud/pkg/storage/local"
+	"github.com/DiscoreMe/SecureCloud/pkg/storage/s3"
 	"github.com/labstack/echo"
 )
 
@@ -43,6 +44,15 @@ func (s *Server) Listen(address string) error {
 
 func (s *Server) EnableLocalStorage() error {
 	s.stors["local"] = local.New()
+	return nil
+}
+
+func (s *Server) EnableS3Storage(endpoint, bucket, accessKey, secretKey, location string) error {
+	stor, err := s3.New(endpoint, bucket, accessKey, secretKey, location)
+	if err != nil {
+		return err
+	}
+	s.stors["s3"] = stor
 	return nil
 }
 

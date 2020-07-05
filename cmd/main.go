@@ -26,6 +26,12 @@ func main() {
 		}
 	}
 
+	if cfg.IsSupportS3 {
+		if err := serv.EnableS3Storage(cfg.S3.Endpoint, cfg.S3.Bucket, cfg.S3.AccessKey, cfg.S3.SecretKey, cfg.S3.Location); err != nil {
+			panic(err)
+		}
+	}
+
 	if err := serv.Listen(cfg.Address); err != nil {
 		panic(err)
 	}

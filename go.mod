@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0 // indirect
+	github.com/minio/minio-go/v6 v6.0.57
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/xxtea/xxtea-go v0.0.0-20170828040851-35c4b17eecf6
