@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
+	"net/url"
 )
 
 type UploadFileResp struct {
@@ -25,6 +26,7 @@ func (s *Server) UploadFile(c echo.Context) error {
 	if storParam == "" {
 		storParam = "local"
 	}
+
 	stor, ok := s.stors[storParam]
 	if !ok {
 		return fmt.Errorf("storage not found")
@@ -48,10 +50,20 @@ func (s *Server) UploadFile(c echo.Context) error {
 		return err
 	}
 
+	var params url.URL
+	params.Scheme = "http"
+	params.Host = c.Request().Host
+	params.Path = fmt.Sprintf("api/file/%s/%s", fl.ID.String(), fl.Key)
+	values := params.Query()
+	values.Add("storage", storParam)
+	values.Add("name", fileHeader.Filename)
+	values.Add("type", fileHeader.Header.Get("Content-Type"))
+	params.RawQuery = values.Encode()
+
 	return c.JSON(http.StatusCreated, UploadFileResp{
 		Key:    fl.Key,
 		FileID: fl.ID.String(),
-		URL:    fmt.Sprintf("%s/api/file/%s/%s?storage=%s", c.Request().Host, fl.ID.String(), fl.Key, storParam),
+		URL:    params.String(),
 	})
 }
 
@@ -67,11 +79,12 @@ func (s *Server) File(c echo.Context) error {
 		Key: key,
 	}
 
-	storParam := c.QueryParam("storage")
-	if storParam == "" {
-		storParam = "local"
+	params := c.Request().URL.Query()
+
+	if params.Get("storage") == "" {
+		params.Set("local", "local")
 	}
-	stor, ok := s.stors[storParam]
+	stor, ok := s.stors[params.Get("storage")]
 	if !ok {
 		return fmt.Errorf("storage not found")
 	}
@@ -84,5 +97,7 @@ func (s *Server) File(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "key is invalid")
 	}
 
-	return c.Stream(http.StatusOK, "", f)
+	c.Response().Header().Set("Cache-Control", "immutable")
+	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("%s; filename=%q", "inline", params.Get("name")))
+	return c.Stream(http.StatusOK, params.Get("type"), f)
 }
