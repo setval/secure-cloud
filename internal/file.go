@@ -82,7 +82,7 @@ func (s *Server) File(c echo.Context) error {
 	params := c.Request().URL.Query()
 
 	if params.Get("storage") == "" {
-		params.Set("local", "local")
+		params.Set("storage", "local")
 	}
 	stor, ok := s.stors[params.Get("storage")]
 	if !ok {
