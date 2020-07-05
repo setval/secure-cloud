@@ -17,7 +17,7 @@ func (f *File) genKey() error {
 	if err != nil {
 		return err
 	}
-	hash := pbkdf2.Key([]byte(f.ID.String()), salt, 10000, 256, sha256.New)
+	hash := pbkdf2.Key([]byte(f.ID.String()), salt, 10000, 4096, sha256.New)
 
 	f.Key = base64.URLEncoding.EncodeToString(salt) + base64.URLEncoding.EncodeToString(hash)
 	return nil
