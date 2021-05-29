@@ -1,3 +1,5 @@
+//+build ignore
+
 // Support for uploading and downloading files from S3 storage.
 
 package s3

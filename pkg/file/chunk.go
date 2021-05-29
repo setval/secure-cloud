@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	ChunkSize      = 32768    // 32KB
-	TrashChunkSize = 4 * 1024 // increase 4KB after encrypt
+	ChunkSize      = 32768 // 32KB
+	TrashChunkSize = 4     // increase 4B after encrypt
 )
 
 type cryptFn func([]byte) []byte
@@ -22,7 +22,8 @@ func ReaderToChunks(r io.Reader, w io.Writer, encryptFn cryptFn) error {
 			return err
 		}
 
-		if _, err := w.Write(encryptFn(b)); err != nil {
+		eb := encryptFn(b)
+		if _, err := w.Write(eb); err != nil {
 			return err
 		}
 	}
@@ -30,7 +31,9 @@ func ReaderToChunks(r io.Reader, w io.Writer, encryptFn cryptFn) error {
 	return nil
 }
 
-func ChunksToWriter(r io.Reader, w io.Writer, decryptFn cryptFn) error {
+func ChunksToWriter(r io.Reader, w io.WriteCloser, decryptFn cryptFn) error {
+	defer w.Close()
+
 	for {
 		b := make([]byte, ChunkSize+TrashChunkSize)
 		_, err := r.Read(b)

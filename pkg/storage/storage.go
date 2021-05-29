@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/DiscoreMe/SecureCloud/pkg/file"
+	"github.com/DiscoreMe/SecureCloud/filebuffer"
 )
 
 // Name of the folder where encrypted files will be uploaded.
@@ -16,6 +16,6 @@ const Folder = "secure-cloud"
 //
 // A pointer to the filebuffer.Filebuffer structure is passed to both functions
 type Storage interface {
-	Upload(*file.File) error
-	Download(*file.File) error
+	Upload(*filebuffer.FileBuffer) error
+	Download(*filebuffer.FileBuffer) error
 }

@@ -1,7 +1,7 @@
 package local
 
 import (
-	"github.com/DiscoreMe/SecureCloud/pkg/file"
+	"github.com/DiscoreMe/SecureCloud/filebuffer"
 	"github.com/DiscoreMe/SecureCloud/pkg/storage"
 	"github.com/labstack/echo"
 	"net/http"
@@ -16,30 +16,26 @@ func New() *Local {
 	return &Local{}
 }
 
-func (l *Local) Upload(f *file.File) error {
+func (l *Local) Upload(f *filebuffer.FileBuffer) error {
 	fcr, err := os.Create(l.filepath(f))
 	if err != nil {
 		return err
 	}
 	defer fcr.Close()
 
-	_, err = fcr.Write(f.Bytes())
-	if err != nil {
-		return err
-	}
-	return fcr.Close()
+	return f.Write(fcr)
 }
 
-func (l *Local) Download(f *file.File) error {
+func (l *Local) Download(f *filebuffer.FileBuffer) error {
 	fh, err := os.Open(l.filepath(f))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "")
 	}
 	defer fh.Close()
-	_, err = f.WriteFromReader(fh)
-	return err
+
+	return f.Read(fh)
 }
 
-func (l *Local) filepath(f *file.File) string {
+func (l *Local) filepath(f *filebuffer.FileBuffer) string {
 	return path.Join(storage.Folder, f.ID.String())
 }

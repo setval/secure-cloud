@@ -2,9 +2,10 @@ package internal
 
 import (
 	"fmt"
-	"github.com/DiscoreMe/SecureCloud/pkg/file"
+	"github.com/DiscoreMe/SecureCloud/filebuffer"
 	"github.com/labstack/echo"
 	uuid "github.com/satori/go.uuid"
+	"io"
 	"net/http"
 	"net/url"
 )
@@ -38,15 +39,12 @@ func (s *Server) UploadFile(c echo.Context) error {
 	}
 	defer f.Close()
 
-	var fl file.File
-	if _, err := fl.WriteFromReader(f); err != nil {
-		return err
-	}
-	if err := fl.Encrypt(); err != nil {
+	fl, err := filebuffer.New(f)
+	if err != nil {
 		return err
 	}
 
-	if err := stor.Upload(&fl); err != nil {
+	if err := stor.Upload(fl); err != nil {
 		return err
 	}
 
@@ -74,10 +72,15 @@ func (s *Server) File(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	var f = &file.File{
+	var f = &filebuffer.FileBuffer{
 		ID:  fileID,
 		Key: key,
 	}
+
+	pr, pw := io.Pipe()
+	defer pr.Close()
+	defer pw.Close()
+	f.SetPipeWriter(pw)
 
 	params := c.Request().URL.Query()
 
@@ -89,15 +92,21 @@ func (s *Server) File(c echo.Context) error {
 		return fmt.Errorf("storage not found")
 	}
 
-	if err := stor.Download(f); err != nil {
-		return err
-	}
+	go func() {
+		if err := stor.Download(f); err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println("end download")
+	}()
 
-	if err := f.Decrypt(); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "key is invalid")
-	}
+	//fmt.Println("read m")
+	//for {
+	//	b := make([]byte, file.ChunkSize)
+	//	n, err := pr.Read(b)
+	//	fmt.Println(n, err)
+	//}
 
 	c.Response().Header().Set("Cache-Control", "immutable")
 	c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("%s; filename=%q", "inline", params.Get("name")))
-	return c.Stream(http.StatusOK, params.Get("type"), f)
+	return c.Stream(http.StatusOK, params.Get("type"), pr)
 }

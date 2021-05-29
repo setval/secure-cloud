@@ -1,3 +1,5 @@
+//+build ignore
+
 // Support for uploading and downloading files from Google drive.
 
 package drive

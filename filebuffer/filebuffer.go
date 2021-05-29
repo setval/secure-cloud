@@ -1,9 +1,9 @@
 package filebuffer
 
 import (
-	"bytes"
+	"github.com/DiscoreMe/SecureCloud/pkg/file"
+	uuid "github.com/satori/go.uuid"
 	"io"
-	"io/ioutil"
 )
 
 // FileBuffer implements io.ReadWriteCloser interface.
@@ -11,34 +11,34 @@ import (
 // File as the default parameter , is the ability to operate with old and new bytes of files
 // and support for additional things.
 type FileBuffer struct {
-	b bytes.Buffer
+	ID  uuid.UUID
+	Key string
+	r   io.Reader
+	w   io.WriteCloser
 }
 
-func (f *FileBuffer) Read(p []byte) (n int, err error) {
-	return f.b.Read(p)
+func New(r io.Reader) (*FileBuffer, error) {
+	id := uuid.NewV4()
+	key, err := file.GenKey(id)
+	return &FileBuffer{
+		r:   r,
+		ID:  id,
+		Key: key,
+	}, err
 }
 
-func (f *FileBuffer) Write(p []byte) (n int, err error) {
-	return f.b.Write(p)
+func (f *FileBuffer) SetPipeWriter(w *io.PipeWriter) {
+	f.w = w
 }
 
-func (f *FileBuffer) Reset() {
-	f.b.Reset()
+func (f *FileBuffer) Write(w io.Writer) error {
+	return file.ReaderToChunks(f.r, w, func(bytes []byte) []byte {
+		return file.Encrypt(f.Key, bytes)
+	})
 }
 
-func (f *FileBuffer) Close() error {
-	f.b.Reset()
-	return nil
-}
-
-func (f *FileBuffer) WriteFromReader(r io.Reader) (n int, err error) {
-	b, err := ioutil.ReadAll(r)
-	if err != nil {
-		return 0, err
-	}
-	return f.Write(b)
-}
-
-func (f *FileBuffer) Bytes() []byte {
-	return f.b.Bytes()
+func (f *FileBuffer) Read(r io.Reader) error {
+	return file.ChunksToWriter(r, f.w, func(bytes []byte) []byte {
+		return file.Decrypt(f.Key, bytes)
+	})
 }

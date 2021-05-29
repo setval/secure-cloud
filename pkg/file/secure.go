@@ -9,39 +9,22 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-func (f *File) genKey() error {
-	f.ID = uuid.NewV4()
-
+func GenKey(id uuid.UUID) (string, error) {
 	salt := make([]byte, 64)
 	_, err := rand.Read(salt)
 	if err != nil {
-		return err
+		return "", err
 	}
-	hash := pbkdf2.Key([]byte(f.ID.String()), salt, 10000, 4096, sha256.New)
+	hash := pbkdf2.Key([]byte(id.String()), salt, 10000, 2048, sha256.New)
 
-	f.Key = base64.URLEncoding.EncodeToString(salt) + base64.URLEncoding.EncodeToString(hash)
-	return nil
+	return base64.URLEncoding.EncodeToString(salt) + base64.URLEncoding.EncodeToString(hash), nil
 }
 
-func (f *File) Encrypt() error {
-	if err := f.genKey(); err != nil {
-		return err
-	}
-
-	encrFile := xxtea.Encrypt(f.Bytes(), []byte(f.Key))
-	f.Reset()
-
-	if _, err := f.Write(encrFile); err != nil {
-		return err
-	}
-
-	return nil
+func Encrypt(key string, b []byte) []byte {
+	return xxtea.Encrypt(b, []byte(key))
 }
 
-func (f *File) Decrypt() error {
-	decrFile := xxtea.Decrypt(f.Bytes(), []byte(f.Key))
-	f.Reset()
-
-	_, err := f.Write(decrFile)
-	return err
+func Decrypt(key string, b []byte) []byte {
+	d := xxtea.Decrypt(b, []byte(key))
+	return d
 }
